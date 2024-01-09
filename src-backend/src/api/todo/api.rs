@@ -1,6 +1,16 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    future::{Future, IntoFuture},
+    process::Output,
+    sync::{Arc, Mutex},
+};
 
-use axum::{response::IntoResponse, Json};
+use axum::{
+    extract,
+    http::{request, StatusCode},
+    middleware::FromExtractor,
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -8,45 +18,37 @@ use crate::{
     domain::entities::todo::{Priority, Status, Todo},
 };
 
-#[derive(Deserialize, Serialize)]
-struct CreateTodoRequest {
+#[derive(Deserialize, Serialize, Clone)]
+pub struct CreateTodoRequest {
     title: String,
     description: String,
 }
 
 #[derive(Deserialize, Serialize)]
-struct GetTodoRequest {
+pub struct GetTodoRequest {
     id: i32,
 }
 
-pub struct TodoController {
-    todo_app_service: Arc<Mutex<dyn TodoAppService>>,
-}
+// #[axum::debug_handler]
+pub async fn create_todo(
+    todo_service: extract::Extension<Arc<dyn TodoAppService>>,
+    playload: Json<CreateTodoRequest>,
+) -> impl IntoResponse {
+    let todo = Todo {
+        id: 0,
+        user_id: 0,
+        title: playload.title.clone(),
+        description: playload.description.clone(),
+        status: Status::Open,
+        priority: Priority::Low,
+        created_at: chrono::Local::now(),
+        updated_at: chrono::Local::now(),
+        deleted_at: None,
+        deadline: None,
+        done: false,
+    };
 
-impl TodoController {
-    pub fn new(todo_app_service: Arc<Mutex<dyn TodoAppService>>) -> Self {
-        Self { todo_app_service }
-    }
+    let todo = todo_service.create(todo).await;
 
-    async fn create(&self, request: Json<CreateTodoRequest>) -> impl IntoResponse {
-        let todo = self
-            .todo_app_service
-            .lock()
-            .unwrap()
-            .create(Todo {
-                id: 0,
-                user_id: 0,
-                title: request.title.clone(),
-                description: request.description.clone(),
-                status: Status::Open,
-                priority: Priority::Medium,
-                created_at: chrono::Local::now(),
-                updated_at: chrono::Local::now(),
-                deleted_at: None,
-                deadline: None,
-                done: false,
-            })
-            .await;
-        Json(todo)
-    }
+    (StatusCode::CREATED, Json(todo))
 }

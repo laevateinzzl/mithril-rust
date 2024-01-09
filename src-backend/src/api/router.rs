@@ -1,7 +1,29 @@
-use axum::{routing::get, Router};
+use std::sync::{Arc, Mutex};
 
-use super::health_checker;
+use axum::{routing::post, Extension, Router};
 
-pub fn create_router() -> Router {
-    Router::new().route("/api/health_checker", get(health_checker))
+use crate::{
+    application::todo::service::TodoAppServiceImpl, infastructure::db::mysql::MySqlTodoRepository,
+};
+
+use super::todo::api::create_todo;
+
+const MYSQL_DSN: &str = "mysql://root:password@localhost:3306/todo";
+
+// #[axum::debug_handler]
+pub async fn create_router() -> Router {
+    let todo_repo = MySqlTodoRepository::new(MYSQL_DSN.to_string()).await;
+
+    let todo_repo = match todo_repo {
+        Ok(repo) => repo,
+        Err(error) => {
+            panic!("Failed to create TodoRepository: {}", error)
+        }
+    };
+
+    let todo_service = Arc::new(Mutex::new(TodoAppServiceImpl::new(todo_repo)));
+
+    Router::new()
+        .route("/api/todo", post(create_todo))
+        .layer(Extension(Arc::new(todo_service)))
 }

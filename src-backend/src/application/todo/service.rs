@@ -6,7 +6,7 @@ use crate::domain::{
 };
 
 #[async_trait::async_trait]
-pub trait TodoAppService {
+pub trait TodoAppService: Send + Sync {
     async fn get_all_by_user_id(&self, user_id: i32) -> Vec<Todo>;
     async fn create(&self, todo: Todo) -> Todo;
     async fn update_status(&self, id: i32, status: Status) -> bool;

@@ -1,18 +1,26 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use axum::{routing::post, Extension, Router};
 
 use crate::{
-    application::todo::service::TodoAppServiceImpl, infastructure::db::mysql::MySqlTodoRepository,
+    application::todo::service::{TodoAppService, TodoAppServiceImpl},
+    infastructure::db::mysql::MySqlTodoRepository,
 };
 
 use super::todo::api::create_todo;
 
-const MYSQL_DSN: &str = "mysql://root:password@localhost:3306/todo";
-
-// #[axum::debug_handler]
 pub async fn create_router() -> Router {
-    let todo_repo = MySqlTodoRepository::new(MYSQL_DSN.to_string()).await;
+    // get database url from .env file
+    dotenv::dotenv().ok();
+
+    let database_url = match std::env::var("MYSQL_DSN") {
+        Ok(url) => url,
+        Err(error) => {
+            panic!("Failed to get DATABASE_URL from .env file: {}", error)
+        }
+    };
+
+    let todo_repo = MySqlTodoRepository::new(database_url).await;
 
     let todo_repo = match todo_repo {
         Ok(repo) => repo,
@@ -21,9 +29,10 @@ pub async fn create_router() -> Router {
         }
     };
 
-    let todo_service = Arc::new(Mutex::new(TodoAppServiceImpl::new(todo_repo)));
+    // let todo_service = Arc::new(TodoAppServiceImpl::new(todo_repo));
+    let todo_service: Arc<dyn TodoAppService> = Arc::new(TodoAppServiceImpl::new(todo_repo));
 
     Router::new()
         .route("/api/todo", post(create_todo))
-        .layer(Extension(Arc::new(todo_service)))
+        .layer(Extension(todo_service))
 }

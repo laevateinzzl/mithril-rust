@@ -1,17 +1,16 @@
-use axum::response::IntoResponse;
 use chrono::{DateTime, Local};
 use sqlx::{Decode, Encode, FromRow};
 
 #[derive(Debug, Clone, Copy, sqlx::Type, serde::Serialize, serde::Deserialize)]
 pub enum Status {
-    Open,
+    Open = 1,
     InProgress,
     Done,
 }
 
 #[derive(Debug, Clone, Copy, sqlx::Type, serde::Serialize, serde::Deserialize)]
 pub enum Priority {
-    Low,
+    Low = 1,
     Medium,
     High,
 }
@@ -57,11 +56,5 @@ impl Todo {
             deadline,
             done,
         }
-    }
-}
-
-impl IntoResponse for Todo {
-    fn into_response(self) -> axum::response::Response {
-        axum::response::Json(self).into_response()
     }
 }

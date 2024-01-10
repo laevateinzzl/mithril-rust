@@ -29,7 +29,7 @@ pub struct GetTodoRequest {
     id: i32,
 }
 
-// #[axum::debug_handler]
+#[axum::debug_handler]
 pub async fn create_todo(
     todo_service: extract::Extension<Arc<dyn TodoAppService>>,
     playload: Json<CreateTodoRequest>,

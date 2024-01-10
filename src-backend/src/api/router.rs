@@ -13,20 +13,22 @@ pub async fn create_router() -> Router {
     // get database url from .env file
     dotenv::dotenv().ok();
 
-    let database_url = match std::env::var("MYSQL_DSN") {
-        Ok(url) => url,
-        Err(error) => {
-            panic!("Failed to get DATABASE_URL from .env file: {}", error)
-        }
-    };
+    // 这里看配置文件里面是mysql的链接还是pgsql的链接，然后选择对应的repo
+    let mysql_dsn = std::env::var("MYSQL_DSN");
+    let pgsql_dsn = std::env::var("PGSQL_DSN");
 
-    let todo_repo = MySqlTodoRepository::new(database_url).await;
-
-    let todo_repo = match todo_repo {
-        Ok(repo) => repo,
-        Err(error) => {
-            panic!("Failed to create TodoRepository: {}", error)
-        }
+    let todo_repo = if mysql_dsn.is_ok() {
+        let dsn = mysql_dsn.unwrap();
+        MySqlTodoRepository::new(dsn)
+            .await
+            .expect("Failed to create repository")
+    } else if pgsql_dsn.is_ok() {
+        let dsn = pgsql_dsn.unwrap();
+        MySqlTodoRepository::new(dsn)
+            .await
+            .expect("Failed to create repository")
+    } else {
+        panic!("No database url found in .env file")
     };
 
     // let todo_service = Arc::new(TodoAppServiceImpl::new(todo_repo));

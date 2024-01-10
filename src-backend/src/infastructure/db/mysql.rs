@@ -42,23 +42,26 @@ impl TodoRepository for MySqlTodoRepository {
             None
         }
     }
-    async fn create(&self, todo: Todo) -> Result<Todo, sqlx::Error> {
+    async fn create(&self, todo: &Todo) -> Result<Todo, sqlx::Error> {
         let query = "INSERT INTO todos (user_id, title, description, status, priority, created_at, updated_at, deleted_at, deadline, done) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        if let Ok(todo) = sqlx::query_as::<_, Todo>(query)
+        if let Ok(res) = sqlx::query(query)
             .bind(todo.user_id)
-            .bind(todo.title)
-            .bind(todo.description)
-            .bind(todo.status as i32)
-            .bind(todo.priority as i32)
+            .bind(todo.title.clone())
+            .bind(todo.description.clone())
+            .bind(todo.status)
+            .bind(todo.priority)
             .bind(todo.created_at)
             .bind(todo.updated_at)
             .bind(todo.deleted_at)
             .bind(todo.deadline)
             .bind(todo.done)
-            .fetch_one(&self.pool)
+            .execute(&self.pool)
             .await
         {
-            Ok(todo)
+            Ok(Todo {
+                id: res.last_insert_id() as i32,
+                ..todo.clone()
+            })
         } else {
             Err(sqlx::Error::RowNotFound)
         }
@@ -69,8 +72,8 @@ impl TodoRepository for MySqlTodoRepository {
             .bind(todo.user_id)
             .bind(todo.title)
             .bind(todo.description)
-            .bind(todo.status as i32)
-            .bind(todo.priority as i32)
+            .bind(todo.status)
+            .bind(todo.priority)
             .bind(todo.created_at)
             .bind(todo.updated_at)
             .bind(todo.deleted_at)
@@ -141,7 +144,7 @@ mod tests {
             deadline: None,
             done: false,
         };
-        let result = repo.create(todo).await;
+        let result = repo.create(&todo).await;
         print!("{:?}", result);
         // assert!(result.is_ok());
     }

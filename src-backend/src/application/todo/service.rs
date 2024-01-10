@@ -33,7 +33,7 @@ impl<T: TodoRepository> TodoAppService for TodoAppServiceImpl<T> {
     }
 
     async fn create(&self, todo: Todo) -> Todo {
-        self.todo_repository.create(todo).await.unwrap()
+        self.todo_repository.create(&todo).await.unwrap()
     }
 
     async fn update_status(&self, id: i32, status: Status) -> bool {

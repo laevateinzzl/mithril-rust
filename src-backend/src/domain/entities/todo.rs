@@ -1,14 +1,16 @@
 use chrono::{DateTime, Local};
-use sqlx::{Decode, Encode, FromRow};
+use sqlx::{Decode, Encode, FromRow, Type};
 
-#[derive(Debug, Clone, Copy, sqlx::Type, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Type)]
+#[repr(i32)]
 pub enum Status {
     Open = 1,
     InProgress,
     Done,
 }
 
-#[derive(Debug, Clone, Copy, sqlx::Type, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Type)]
+#[repr(i32)]
 pub enum Priority {
     Low = 1,
     Medium,

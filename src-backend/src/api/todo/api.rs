@@ -51,6 +51,7 @@ pub async fn get_todo(
     path::Path(id): path::Path<i32>,
 ) -> impl IntoResponse {
     let todo = todo_service.get_by_id(id).await;
+    print!("{id}");
     if let Some(todo) = todo {
         success_response(serde_json::to_value(todo).unwrap())
     } else {

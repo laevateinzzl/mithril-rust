@@ -16,7 +16,7 @@ impl PgSqlTodoRepository {
 #[async_trait::async_trait]
 impl TodoRepository for PgSqlTodoRepository {
     async fn get_all_by_user_id(&self, user_id: i32) -> Vec<Todo> {
-        let query = "SELECT * FROM todos WHERE user_id = $1";
+        let query = "SELECT * FROM todos WHERE user_id = $1 RETURNING *";
         if let Ok(todos) = sqlx::query_as::<_, Todo>(query)
             .bind(user_id)
             .fetch_all(&self.pool)
@@ -28,7 +28,7 @@ impl TodoRepository for PgSqlTodoRepository {
         }
     }
     async fn get_by_id(&self, id: i32) -> Option<Todo> {
-        let query = "SELECT * FROM todos WHERE id = $1";
+        let query = "SELECT * FROM todos WHERE id = $1 RETURNING *";
         if let Ok(todo) = sqlx::query_as::<_, Todo>(query)
             .bind(id)
             .fetch_one(&self.pool)
@@ -117,8 +117,13 @@ mod tests {
 
     async fn setup() -> PgSqlTodoRepository {
         dotenv::dotenv().ok();
-        let dsn = env::var("PGSQL_DSN").expect("DATABASE_URL must be set");
-        PgSqlTodoRepository::new(dsn).await.unwrap()
+        let dsn = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&dsn)
+            .await
+            .unwrap();
+        PgSqlTodoRepository::new(pool).unwrap()
     }
 
     #[tokio::test]
@@ -131,7 +136,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_by_id() {
         let repo = setup().await;
-        let todo = repo.get_by_id(1).await;
+        let todo = repo.get_by_id(11).await;
         assert!(todo.is_some());
     }
 

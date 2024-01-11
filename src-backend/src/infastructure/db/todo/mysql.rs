@@ -98,16 +98,18 @@ impl TodoRepository for MySqlTodoRepository {
 }
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use crate::domain::entities::todo::{Priority, Status, Todo};
     use std::env;
 
     async fn setup() -> MySqlTodoRepository {
         dotenv::dotenv().ok();
-        let dsn = env::var("MYSQL_DSN").expect("DATABASE_URL must be set");
-        MySqlTodoRepository::new(dsn)
+        let dsn = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let pool = MySqlPool::connect_with(MySqlConnectOptions::from_str(&dsn).unwrap())
             .await
-            .expect("Failed to create repository")
+            .unwrap();
+        MySqlTodoRepository::new(pool).unwrap()
     }
 
     #[tokio::test]

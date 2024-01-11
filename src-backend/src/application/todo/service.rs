@@ -8,6 +8,7 @@ use crate::domain::{
 #[async_trait::async_trait]
 pub trait TodoAppService: Send + Sync {
     async fn get_all_by_user_id(&self, user_id: i32) -> Vec<Todo>;
+    async fn get_by_id(&self, id: i32) -> Option<Todo>;
     async fn create(&self, todo: Todo) -> Todo;
     async fn update_status(&self, id: i32, status: Status) -> bool;
     async fn update_priority(&self, id: i32, priority: Priority) -> bool;
@@ -30,6 +31,10 @@ impl<T: TodoRepository> TodoAppServiceImpl<T> {
 impl<T: TodoRepository> TodoAppService for TodoAppServiceImpl<T> {
     async fn get_all_by_user_id(&self, user_id: i32) -> Vec<Todo> {
         self.todo_repository.get_all_by_user_id(user_id).await
+    }
+
+    async fn get_by_id(&self, id: i32) -> Option<Todo> {
+        self.todo_repository.get_by_id(id).await
     }
 
     async fn create(&self, todo: Todo) -> Todo {

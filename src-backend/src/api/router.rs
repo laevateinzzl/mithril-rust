@@ -1,13 +1,16 @@
 use std::sync::Arc;
 
-use axum::{routing::post, Extension, Router};
+use axum::{
+    routing::{get, post},
+    Extension, Router,
+};
 
 use crate::{
     application::todo::service::{TodoAppService, TodoAppServiceImpl},
     infastructure::db::mysql::MySqlTodoRepository,
 };
 
-use super::todo::api::create_todo;
+use super::todo::api::{create_todo, get_todo};
 
 pub async fn create_router() -> Router {
     // get database url from .env file
@@ -36,5 +39,6 @@ pub async fn create_router() -> Router {
 
     Router::new()
         .route("/api/todo", post(create_todo))
+        .route("/api/todo/:id", get(get_todo))
         .layer(Extension(todo_service))
 }

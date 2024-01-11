@@ -5,7 +5,7 @@ use std::{
 };
 
 use axum::{
-    extract,
+    extract::{self, path},
     http::{request, StatusCode},
     middleware::FromExtractor,
     response::IntoResponse,
@@ -14,6 +14,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    api::request::Response,
     application::todo::service::TodoAppService,
     domain::entities::todo::{Priority, Status, Todo},
 };
@@ -22,11 +23,6 @@ use crate::{
 pub struct CreateTodoRequest {
     title: String,
     description: String,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct GetTodoRequest {
-    id: i32,
 }
 
 #[axum::debug_handler]
@@ -50,5 +46,24 @@ pub async fn create_todo(
 
     let todo = todo_service.create(todo).await;
 
-    (StatusCode::CREATED, Json(todo))
+    Response {
+        code: 200,
+        message: "success".to_string(),
+        data: serde_json::to_value(todo).unwrap(),
+    }
+    // (StatusCode::CREATED, Json(todo))
+}
+
+pub async fn get_todo(
+    todo_service: extract::Extension<Arc<dyn TodoAppService>>,
+    path::Path(id): path::Path<i32>,
+) -> impl IntoResponse {
+    let todo = todo_service.get_by_id(id).await;
+
+    // (StatusCode::OK, Json(todo))
+    Response {
+        code: 200,
+        message: "success".to_string(),
+        data: serde_json::to_value(todo).unwrap(),
+    }
 }

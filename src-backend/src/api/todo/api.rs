@@ -1,20 +1,14 @@
-use std::{
-    future::{Future, IntoFuture},
-    process::Output,
-    sync::{Arc, Mutex},
-};
+use std::sync::Arc;
 
 use axum::{
     extract::{self, path},
-    http::{request, StatusCode},
-    middleware::FromExtractor,
     response::IntoResponse,
     Json,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::request::Response,
+    api::request::{error_response, success_response},
     application::todo::service::TodoAppService,
     domain::entities::todo::{Priority, Status, Todo},
 };
@@ -45,13 +39,11 @@ pub async fn create_todo(
     };
 
     let todo = todo_service.create(todo).await;
-
-    Response {
-        code: 200,
-        message: "success".to_string(),
-        data: serde_json::to_value(todo).unwrap(),
+    if let Ok(todo) = todo {
+        success_response(serde_json::to_value(todo).unwrap())
+    } else {
+        error_response(500, "Failed to create todo".to_string())
     }
-    // (StatusCode::CREATED, Json(todo))
 }
 
 pub async fn get_todo(
@@ -59,11 +51,9 @@ pub async fn get_todo(
     path::Path(id): path::Path<i32>,
 ) -> impl IntoResponse {
     let todo = todo_service.get_by_id(id).await;
-
-    // (StatusCode::OK, Json(todo))
-    Response {
-        code: 200,
-        message: "success".to_string(),
-        data: serde_json::to_value(todo).unwrap(),
+    if let Some(todo) = todo {
+        success_response(serde_json::to_value(todo).unwrap())
+    } else {
+        error_response(500, "Failed to get todo".to_string())
     }
 }

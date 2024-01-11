@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::str::FromStr;
 
 use sqlx::{mysql::MySqlConnectOptions, ConnectOptions, MySqlPool};
@@ -9,9 +10,7 @@ pub struct MySqlTodoRepository {
 }
 
 impl MySqlTodoRepository {
-    pub async fn new(dsn: String) -> Result<Self, sqlx::Error> {
-        let options = MySqlConnectOptions::from_str(&dsn)?.log_statements(log::LevelFilter::Trace);
-        let pool = MySqlPool::connect_with(options).await?;
+    pub fn new(pool: MySqlPool) -> Result<Self, sqlx::Error> {
         Ok(Self { pool })
     }
 }
@@ -42,7 +41,7 @@ impl TodoRepository for MySqlTodoRepository {
             None
         }
     }
-    async fn create(&self, todo: &Todo) -> Result<Todo, sqlx::Error> {
+    async fn create(&self, todo: &Todo) -> Result<Todo> {
         let query = "INSERT INTO todos (user_id, title, description, status, priority, created_at, updated_at, deleted_at, deadline, done) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         if let Ok(res) = sqlx::query(query)
             .bind(todo.user_id)
@@ -63,7 +62,7 @@ impl TodoRepository for MySqlTodoRepository {
                 ..todo.clone()
             })
         } else {
-            Err(sqlx::Error::RowNotFound)
+            Err(anyhow::anyhow!("Failed to create todo"))
         }
     }
     async fn save(&self, todo: Todo) -> Result<bool, sqlx::Error> {

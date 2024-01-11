@@ -5,10 +5,7 @@ use axum::{
     Extension, Router,
 };
 
-use crate::{
-    application::todo::service::{TodoAppService, TodoAppServiceImpl},
-    infastructure::db::mysql::MySqlTodoRepository,
-};
+use crate::application::todo::service::{TodoAppService, TodoAppServiceImpl};
 
 use super::todo::api::{create_todo, get_todo};
 
@@ -16,23 +13,8 @@ pub async fn create_router() -> Router {
     // get database url from .env file
     dotenv::dotenv().ok();
 
-    // 这里看配置文件里面是mysql的链接还是pgsql的链接，然后选择对应的repo
-    let mysql_dsn = std::env::var("MYSQL_DSN");
-    let pgsql_dsn = std::env::var("PGSQL_DSN");
-
-    let todo_repo = if mysql_dsn.is_ok() {
-        let dsn = mysql_dsn.unwrap();
-        MySqlTodoRepository::new(dsn)
-            .await
-            .expect("Failed to create repository")
-    } else if pgsql_dsn.is_ok() {
-        let dsn = pgsql_dsn.unwrap();
-        MySqlTodoRepository::new(dsn)
-            .await
-            .expect("Failed to create repository")
-    } else {
-        panic!("No database url found in .env file")
-    };
+    // 读取变量DB_TYPE的值,初始化对应pool
+    let db_type = std::env::var("DB_TYPE").expect("DB_TYPE must be set");
 
     // let todo_service = Arc::new(TodoAppServiceImpl::new(todo_repo));
     let todo_service: Arc<dyn TodoAppService> = Arc::new(TodoAppServiceImpl::new(todo_repo));

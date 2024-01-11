@@ -1,3 +1,4 @@
+use anyhow::Result;
 use chrono::{DateTime, Local};
 
 use crate::domain::{
@@ -9,7 +10,7 @@ use crate::domain::{
 pub trait TodoAppService: Send + Sync {
     async fn get_all_by_user_id(&self, user_id: i32) -> Vec<Todo>;
     async fn get_by_id(&self, id: i32) -> Option<Todo>;
-    async fn create(&self, todo: Todo) -> Todo;
+    async fn create(&self, todo: Todo) -> Result<Todo>;
     async fn update_status(&self, id: i32, status: Status) -> bool;
     async fn update_priority(&self, id: i32, priority: Priority) -> bool;
     async fn update_deadline(&self, id: i32, deadline: DateTime<Local>) -> bool;
@@ -37,8 +38,8 @@ impl<T: TodoRepository> TodoAppService for TodoAppServiceImpl<T> {
         self.todo_repository.get_by_id(id).await
     }
 
-    async fn create(&self, todo: Todo) -> Todo {
-        self.todo_repository.create(&todo).await.unwrap()
+    async fn create(&self, todo: Todo) -> Result<Todo> {
+        self.todo_repository.create(&todo).await
     }
 
     async fn update_status(&self, id: i32, status: Status) -> bool {

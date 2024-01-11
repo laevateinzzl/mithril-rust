@@ -1,9 +1,9 @@
 use axum::{response::IntoResponse, Json};
 
+pub mod middleware;
+pub mod request;
 pub mod router;
 pub mod todo;
-pub mod request;
-pub mod middleware;
 
 pub async fn health_checker() -> impl IntoResponse {
     const MESSAGE: &str = "Working fine";

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use sqlx::{prelude::*, query};
 
@@ -7,8 +8,7 @@ pub struct PgSqlTodoRepository {
 }
 
 impl PgSqlTodoRepository {
-    pub async fn new(dsn: String) -> Result<Self, sqlx::Error> {
-        let pool = PgPoolOptions::new().connect(&dsn).await?;
+    pub fn new(pool: PgPool) -> Result<Self, sqlx::Error> {
         Ok(Self { pool })
     }
 }
@@ -40,7 +40,7 @@ impl TodoRepository for PgSqlTodoRepository {
         }
     }
 
-    async fn create(&self, todo: &Todo) -> Result<Todo, sqlx::Error> {
+    async fn create(&self, todo: &Todo) -> Result<Todo> {
         let query = "INSERT INTO todos (user_id, title, description, status, priority, created_at, updated_at, deleted_at, deadline, done) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *";
 
         if let Ok(res) = sqlx::query(query)
@@ -71,7 +71,7 @@ impl TodoRepository for PgSqlTodoRepository {
                 done: res.try_get("done")?,
             })
         } else {
-            Err(sqlx::Error::RowNotFound)
+            Err(anyhow::anyhow!("Failed to create todo"))
         }
     }
     async fn save(&self, todo: Todo) -> Result<bool, sqlx::Error> {

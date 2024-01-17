@@ -182,3 +182,44 @@ impl UserRepository for MySqlUserRepository {
 //         }
 //     }
 // }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::entities::user::User;
+    use sqlx::mysql::MySqlPoolOptions;
+    use std::env;
+
+    async fn setup() -> Result<MySqlUserRepository, sqlx::Error> {
+        let dsn = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let pool = MySqlPoolOptions::new()
+            .max_connections(5)
+            .connect(&dsn)
+            .await
+            .expect("Failed to connect to MySQL");
+        Ok(MySqlUserRepository::new(pool)?)
+    }
+
+    #[tokio::test]
+    async fn test_save() {
+        let repo = setup().await.expect("Failed to setup repository");
+        let user = User {
+            id: 1,
+            username: "test".to_string(),
+            email: "test@example.com".to_string(),
+            password: "password".to_string(),
+            created_at: chrono::Local::now(),
+            updated_at: chrono::Local::now(),
+            deleted_at: None,
+        };
+        let result = repo.save(user).await;
+        assert!(result);
+    }
+
+    #[tokio::test]
+    async fn test_delete() {
+        let repo = setup().await.expect("Failed to setup repository");
+        let id = 1;
+        let result = repo.delete(id).await;
+        assert!(result);
+    }
+}

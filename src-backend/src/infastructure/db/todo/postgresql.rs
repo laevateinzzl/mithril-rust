@@ -115,3 +115,105 @@ impl TodoRepository for PgSqlTodoRepository {
         })
     }
 }
+
+// gen tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::entities::todo::{Priority, Status};
+    use chrono::Utc;
+    use sqlx::postgres::PgConnectOptions;
+
+    async fn setup() -> Result<PgSqlTodoRepository, sqlx::Error> {
+        dotenv::dotenv().ok();
+        let dns = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&dns)
+            .await?;
+        Ok(PgSqlTodoRepository::new(pool)?)
+    }
+
+    #[tokio::test]
+    async fn test_get_all_by_user_id() {
+        let repo = setup().await.expect("");
+        let user_id = 1;
+        let todos = repo.get_all_by_user_id(user_id).await;
+        assert!(todos.is_empty()); // assuming no todos for user_id 1
+    }
+
+    #[tokio::test]
+    async fn test_get_by_id() {
+        let repo = setup().await.expect("");
+        let id = 1;
+        let todo = repo.get_by_id(id).await;
+        assert!(todo.is_none()); // assuming no todos for user_id 1
+    }
+
+    #[tokio::test]
+    async fn test_create() {
+        let repo = setup().await.expect("");
+        let todo = Todo {
+            id: 0,
+            user_id: 1,
+            title: "test".to_string(),
+            description: "test".to_string(),
+            status: Status::Open,
+            priority: Priority::Low,
+            created_at: chrono::Local::now(),
+            updated_at: chrono::Local::now(),
+            deleted_at: None,
+            deadline: None,
+            done: false,
+        };
+        let todo = repo.create(todo).await;
+        assert!(todo.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_save() {
+        let repo = setup().await.expect("");
+        let todo = Todo {
+            id: 0,
+            user_id: 1,
+            title: "test".to_string(),
+            description: "test".to_string(),
+            status: Status::Open,
+            priority: Priority::Low,
+            created_at: chrono::Local::now(),
+            updated_at: chrono::Local::now(),
+            deleted_at: None,
+            deadline: None,
+            done: false,
+        };
+        let todo = repo.create(todo).await;
+        assert!(todo.is_ok());
+        let mut todo = todo.unwrap();
+        todo.title = "test2".to_string();
+        let result = repo.save(todo).await;
+        assert!(result);
+    }
+
+    #[tokio::test]
+    async fn test_delete() {
+        let repo = setup().await.expect("");
+        let todo = Todo {
+            id: 0,
+            user_id: 1,
+            title: "test".to_string(),
+            description: "test".to_string(),
+            status: Status::Open,
+            priority: Priority::Low,
+            created_at: chrono::Local::now(),
+            updated_at: chrono::Local::now(),
+            deleted_at: None,
+            deadline: None,
+            done: false,
+        };
+        let todo = repo.create(todo).await;
+        assert!(todo.is_ok());
+        let todo = todo.unwrap();
+        let result = repo.delete(todo.id).await;
+        assert!(result);
+    }
+}

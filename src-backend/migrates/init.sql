@@ -33,7 +33,7 @@ CREATE TABLE "public"."todos" (
 -- create table todos mysql
 CREATE TABLE user (
   user_id INT AUTO_INCREMENT,
-  account VARCHAR(255) NOT NULL,
+  username VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
   password VARCHAR(255) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -47,7 +47,7 @@ CREATE TABLE user (
 -- create table todos postgres
 CREATE TABLE "public"."user" (
   "user_id" int4 NOT NULL DEFAULT nextval('mytable_id_seq'::regclass),
-  "account" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
+  "username" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
   "email" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
   "password" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
   "created_at" timestamptz(6),

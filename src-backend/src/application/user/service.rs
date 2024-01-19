@@ -3,6 +3,7 @@ use ::anyhow::Result;
 use crate::{
     api::user::api::{CreateUserRequest, UserLoginRequest},
     domain::{entities::user::User, repository::user::UserRepository},
+    utils::verification::verify_email,
 };
 
 #[async_trait::async_trait()]
@@ -22,6 +23,10 @@ pub struct UserServiceImpl<T> {
 #[async_trait::async_trait]
 impl<T: UserRepository> UserService for UserServiceImpl<T> {
     async fn register(&self, req: CreateUserRequest) -> Result<User> {
+        if verify_email(&req.email) {
+            return Err(anyhow::anyhow!("email not valid"));
+        }
+
         if req.password != req.password_confirmation {
             return Err(anyhow::anyhow!("password not match"));
         }
@@ -42,6 +47,10 @@ impl<T: UserRepository> UserService for UserServiceImpl<T> {
             .await
     }
     async fn login(&self, req: UserLoginRequest) -> Result<User> {
+        if verify_email(&req.email) {
+            return Err(anyhow::anyhow!("email not valid"));
+        }
+
         let user = self
             .user_repository
             .get_by_email(req.email.clone())

@@ -6,3 +6,5 @@ pub mod application;
 pub mod domain;
 // Infastructure layer 定义了基础设施层的逻辑(数据库, 缓存, 消息队列...)
 pub mod infastructure;
+// utils layer 定义了工具层的逻辑(工具函数, 工具宏...)
+pub mod utils;

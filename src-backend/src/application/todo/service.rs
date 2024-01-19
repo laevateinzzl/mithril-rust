@@ -7,7 +7,7 @@ use crate::domain::{
 };
 
 #[async_trait::async_trait]
-pub trait TodoAppService: Sync {
+pub trait TodoAppService: Send + Sync {
     async fn get_all_by_user_id(&self, user_id: i32) -> Vec<Todo>;
     async fn get_by_id(&self, id: i32) -> Option<Todo>;
     async fn create(&self, todo: Todo) -> Result<Todo>;
@@ -39,31 +39,31 @@ impl<T: TodoRepository> TodoAppService for TodoAppServiceImpl<T> {
     }
 
     async fn create(&self, todo: Todo) -> Result<Todo> {
-        self.todo_repository.create(todo).await
+        self.todo_repository.create(&todo).await
     }
 
     async fn update_status(&self, id: i32, status: Status) -> bool {
         let mut todo = self.todo_repository.get_by_id(id).await.unwrap();
         todo.status = status;
-        self.todo_repository.save(todo).await
+        self.todo_repository.save(todo).await.unwrap()
     }
 
     async fn update_priority(&self, id: i32, priority: Priority) -> bool {
         let mut todo = self.todo_repository.get_by_id(id).await.unwrap();
         todo.priority = priority;
-        self.todo_repository.save(todo).await
+        self.todo_repository.save(todo).await.unwrap()
     }
 
     async fn update_deadline(&self, id: i32, deadline: DateTime<Local>) -> bool {
         let mut todo = self.todo_repository.get_by_id(id).await.unwrap();
         todo.deadline = Some(deadline);
-        self.todo_repository.save(todo).await
+        self.todo_repository.save(todo).await.unwrap()
     }
 
     async fn update_done(&self, id: i32, done: bool) -> bool {
         let mut todo = self.todo_repository.get_by_id(id).await.unwrap();
         todo.done = done;
-        self.todo_repository.save(todo).await
+        self.todo_repository.save(todo).await.unwrap()
     }
 
     async fn delete(&self, id: i32) -> bool {

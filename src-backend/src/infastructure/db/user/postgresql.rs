@@ -13,170 +13,79 @@ impl PgUserRepository {
     }
 }
 
+#[async_trait::async_trait]
 impl UserRepository for PgUserRepository {
-    fn get_by_id(
-        &self,
-        id: i32,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<User>> + '_>> {
-        let query = "SELECT * FROM users WHERE id = $1";
-        Box::pin(async move {
-            if let Ok(user) = sqlx::query_as::<_, User>(query)
-                .bind(id)
-                .fetch_one(&self.pool)
-                .await
-            {
-                Some(user)
-            } else {
-                None
-            }
-        })
+    async fn get_by_id(&self, id: i32) -> Option<User> {
+        let query = "SELECT * FROM user WHERE id = $1";
+        if let Ok(user) = sqlx::query_as::<_, User>(query)
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Some(user)
+        } else {
+            None
+        }
     }
 
-    fn get_by_email(
-        &self,
-        email: String,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<User>> + '_>> {
-        let query = "SELECT * FROM users WHERE email = $1";
-        Box::pin(async move {
-            if let Ok(user) = sqlx::query_as::<_, User>(query)
-                .bind(email)
-                .fetch_one(&self.pool)
-                .await
-            {
-                Some(user)
-            } else {
-                None
-            }
-        })
+    async fn get_by_email(&self, email: String) -> Option<User> {
+        let query = "SELECT * FROM user WHERE email = $1";
+        if let Ok(user) = sqlx::query_as::<_, User>(query)
+            .bind(email)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Some(user)
+        } else {
+            None
+        }
     }
 
-    fn create(
-        &self,
-        user: User,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<User>> + '_>> {
-        let query = "INSERT INTO users (email, password, created_at, updated_at, deleted_at) VALUES ($1, $2, $3, $4, $5) RETURNING *";
-        Box::pin(async move {
-            if let Ok(res) = sqlx::query(query)
-                .bind(user.email.clone())
-                .bind(user.password.clone())
-                .bind(user.created_at)
-                .bind(user.updated_at)
-                .bind(user.deleted_at)
-                .fetch_one(&self.pool)
-                .await
-            {
-                Ok(User {
-                    id: res.try_get("id")?,
-                    ..user.clone()
-                })
-            } else {
-                Err(anyhow::anyhow!("Error creating user"))
-            }
-        })
+    async fn create(&self, user: &User) -> Result<User> {
+        let query = "INSERT INTO user (email, password, salt, created_at, updated_at, deleted_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
+        if let Ok(res) = sqlx::query(query)
+            .bind(user.email.clone())
+            .bind(user.password.clone())
+            .bind(user.salt.clone())
+            .bind(user.created_at)
+            .bind(user.updated_at)
+            .bind(user.deleted_at)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(User {
+                id: res.try_get("id")?,
+                ..user.clone()
+            })
+        } else {
+            Err(anyhow::anyhow!("Error creating user"))
+        }
     }
 
-    fn save(&self, user: User) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + '_>> {
-        let query = "UPDATE users SET email = $1, password = $2, updated_at = $3, deleted_at = $4 WHERE id = $5";
-        Box::pin(async move {
-            if let Ok(_) = sqlx::query(query)
-                .bind(user.email)
-                .bind(user.password)
-                .bind(user.updated_at)
-                .bind(user.deleted_at)
-                .bind(user.id)
-                .execute(&self.pool)
-                .await
-            {
-                true
-            } else {
-                false
-            }
-        })
+    async fn save(&self, user: User) -> bool {
+        let query = "UPDATE user SET email = $1, password = $2, salt = $3, updated_at = $4, deleted_at = $5 WHERE id = $6";
+        if let Ok(_) = sqlx::query(query)
+            .bind(user.email)
+            .bind(user.password)
+            .bind(user.salt.clone())
+            .bind(user.updated_at)
+            .bind(user.deleted_at)
+            .bind(user.id)
+            .execute(&self.pool)
+            .await
+        {
+            true
+        } else {
+            false
+        }
     }
 
-    fn delete(&self, id: i32) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + '_>> {
-        let query = "DELETE FROM users WHERE id = $1";
-        Box::pin(async move {
-            if let Ok(_) = sqlx::query(query).bind(id).execute(&self.pool).await {
-                true
-            } else {
-                false
-            }
-        })
+    async fn delete(&self, id: i32) -> bool {
+        let query = "DELETE FROM user WHERE id = $1";
+        if let Ok(_) = sqlx::query(query).bind(id).execute(&self.pool).await {
+            true
+        } else {
+            false
+        }
     }
 }
-
-// #[async_trait::async_trait]
-// impl UserRepository for PgUserRepository {
-//     async fn get_by_id(&self, id: i32) -> Option<User> {
-//         let query = "SELECT * FROM users WHERE id = $1";
-//         if let Ok(user) = sqlx::query_as::<_, User>(query)
-//             .bind(id)
-//             .fetch_one(&self.pool)
-//             .await
-//         {
-//             Some(user)
-//         } else {
-//             None
-//         }
-//     }
-
-//     async fn get_by_email(&self, email: String) -> Option<User> {
-//         let query = "SELECT * FROM users WHERE email = $1";
-//         if let Ok(user) = sqlx::query_as::<_, User>(query)
-//             .bind(email)
-//             .fetch_one(&self.pool)
-//             .await
-//         {
-//             Some(user)
-//         } else {
-//             None
-//         }
-//     }
-
-//     async fn create(&self, user: &User) -> Result<User> {
-//         let query = "INSERT INTO users (email, password, created_at, updated_at, deleted_at) VALUES ($1, $2, $3, $4, $5) RETURNING *";
-//         if let Ok(res) = sqlx::query(query)
-//             .bind(user.email.clone())
-//             .bind(user.password.clone())
-//             .bind(user.created_at)
-//             .bind(user.updated_at)
-//             .bind(user.deleted_at)
-//             .fetch_one(&self.pool)
-//             .await
-//         {
-//             Ok(User {
-//                 id: res.try_get("id")?,
-//                 ..user.clone()
-//             })
-//         } else {
-//             Err(anyhow::anyhow!("Error creating user"))
-//         }
-//     }
-
-//     async fn save(&self, user: User) -> bool {
-//         let query = "UPDATE users SET email = $1, password = $2, updated_at = $3, deleted_at = $4 WHERE id = $5";
-//         if let Ok(_) = sqlx::query(query)
-//             .bind(user.email)
-//             .bind(user.password)
-//             .bind(user.updated_at)
-//             .bind(user.deleted_at)
-//             .bind(user.id)
-//             .execute(&self.pool)
-//             .await
-//         {
-//             true
-//         } else {
-//             false
-//         }
-//     }
-
-//     async fn delete(&self, id: i32) -> bool {
-//         let query = "DELETE FROM users WHERE id = $1";
-//         if let Ok(_) = sqlx::query(query).bind(id).execute(&self.pool).await {
-//             true
-//         } else {
-//             false
-//         }
-//     }
-// }

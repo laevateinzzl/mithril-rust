@@ -7,7 +7,7 @@
  * @FilePath: /src-backend/src/api/request.rs
  */
 
-use axum::response::IntoResponse;
+use axum::{extract::FromRequestParts, response::IntoResponse};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]

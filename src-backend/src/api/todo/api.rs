@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{
     extract::{self, path},
     response::IntoResponse,
-    Json,
+    Extension, Json,
 };
 use serde::{Deserialize, Serialize};
 
@@ -22,11 +22,12 @@ pub struct CreateTodoRequest {
 #[axum::debug_handler]
 pub async fn create_todo(
     todo_service: extract::Extension<Arc<dyn TodoAppService>>,
+    Extension(user_id): Extension<i32>,
     playload: Json<CreateTodoRequest>,
 ) -> impl IntoResponse {
     let todo = Todo {
         id: 0,
-        user_id: 0,
+        user_id,
         title: playload.title.clone(),
         description: playload.description.clone(),
         status: Status::Open,
@@ -57,4 +58,12 @@ pub async fn get_todo(
     } else {
         error_response(500, "Failed to get todo".to_string())
     }
+}
+
+pub async fn get_todo_list(
+    todo_service: extract::Extension<Arc<dyn TodoAppService>>,
+    Extension(user_id): Extension<i32>,
+) -> impl IntoResponse {
+    let todo_list = todo_service.get_all_by_user_id(user_id).await;
+    success_response(serde_json::to_value(todo_list).unwrap())
 }
